@@ -1,4 +1,3 @@
-import logging
 import os
 import shutil
 from pathlib import Path
@@ -141,16 +140,12 @@ def logging_conf_tmp_path_incorrect_type(tmp_path_factory: TempPathFactory) -> P
 
 
 @pytest.fixture
-def mock_logger(mocker: MockerFixture) -> logging.Logger:
+def mock_logger(mocker: MockerFixture) -> MockerFixture:
     """Mock the logger with pytest-mock and a pytest fixture.
     - https://github.com/pytest-dev/pytest-mock
     - https://docs.pytest.org/en/latest/fixture.html
     """
-    logger = logging.getLogger()
-    mocker.patch.object(logger, "debug")
-    mocker.patch.object(logger, "error")
-    mocker.patch.object(logger, "info")
-    return logger
+    return mocker.patch("logging.getLogger")
 
 
 @pytest.fixture

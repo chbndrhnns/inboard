@@ -1,4 +1,3 @@
-import logging
 import multiprocessing
 import os
 from pathlib import Path
@@ -103,53 +102,53 @@ class TestConfigureLogging:
     """
 
     def test_configure_logging_file(
-        self, logging_conf_file_path: Path, mock_logger: logging.Logger
+        self, logging_conf_file_path: Path, mock_logger: MockerFixture
     ) -> None:
         """Test `start.configure_logging` with correct logging config file path."""
         start.configure_logging(
             logger=mock_logger, logging_conf=str(logging_conf_file_path)
         )
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             f"Logging dict config loaded from {logging_conf_file_path}."
         )
 
     def test_configure_logging_module(
-        self, logging_conf_module_path: str, mock_logger: logging.Logger
+        self, logging_conf_module_path: str, mock_logger: MockerFixture
     ) -> None:
         """Test `start.configure_logging` with correct logging config module path."""
         start.configure_logging(
             logger=mock_logger, logging_conf=logging_conf_module_path
         )
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             f"Logging dict config loaded from {logging_conf_module_path}."
         )
 
     def test_configure_logging_module_incorrect(
-        self, mock_logger: logging.Logger
+        self, mock_logger: MockerFixture
     ) -> None:
         with pytest.raises(ImportError):
             start.configure_logging(logger=mock_logger, logging_conf="no.module.here")
             import_error_msg = "Unable to import no.module.here."
             logger_error_msg = "Error when configuring logging:"
-            mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+            mock_logger.debug.assert_called_once_with(
                 f"{logger_error_msg} {import_error_msg}."
             )
 
     def test_configure_logging_tmp_file(
-        self, logging_conf_tmp_file_path: Path, mock_logger: logging.Logger
+        self, logging_conf_tmp_file_path: Path, mock_logger: MockerFixture
     ) -> None:
         """Test `start.configure_logging` with correct logging config file path."""
         start.configure_logging(
             logger=mock_logger, logging_conf=f"{logging_conf_tmp_file_path}/tmp_log.py"
         )
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             f"Logging dict config loaded from {logging_conf_tmp_file_path}/tmp_log.py."
         )
 
     def test_configure_logging_tmp_file_incorrect_extension(
         self,
         logging_conf_tmp_path_incorrect_extension: Path,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
     ) -> None:
         """Test `start.configure_logging` with incorrect temporary file type."""
         with pytest.raises(ImportError):
@@ -161,14 +160,14 @@ class TestConfigureLogging:
                 f"Unable to import {logging_conf_tmp_path_incorrect_extension}."
             )
             logger_error_msg = "Error when configuring logging:"
-            mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+            mock_logger.debug.assert_called_once_with(
                 f"{logger_error_msg} {import_error_msg}."
             )
 
     def test_configure_logging_tmp_module(
         self,
         logging_conf_tmp_file_path: Path,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
         """Test `start.configure_logging` with temporary logging config path."""
@@ -176,14 +175,14 @@ class TestConfigureLogging:
         monkeypatch.setenv("LOGGING_CONF", "tmp_log")
         assert os.getenv("LOGGING_CONF") == "tmp_log"
         start.configure_logging(logger=mock_logger, logging_conf="tmp_log")
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             "Logging dict config loaded from tmp_log."
         )
 
     def test_configure_logging_tmp_module_incorrect_type(
         self,
         logging_conf_tmp_path_incorrect_type: Path,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
         """Test `start.configure_logging` with temporary logging config path.
@@ -197,14 +196,14 @@ class TestConfigureLogging:
             start.configure_logging(logger=mock_logger, logging_conf="incorrect_type")
             logger_error_msg = "Error when configuring logging:"
             type_error_msg = "LOGGING_CONFIG is not a dictionary instance."
-            mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+            mock_logger.debug.assert_called_once_with(
                 f"{logger_error_msg} {type_error_msg}."
             )
 
     def test_configure_logging_tmp_module_no_dict(
         self,
         logging_conf_tmp_path_no_dict: Path,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
         """Test `start.configure_logging` with temporary logging config path.
@@ -218,7 +217,7 @@ class TestConfigureLogging:
             start.configure_logging(logger=mock_logger, logging_conf="no_dict")
             logger_error_msg = "Error when configuring logging:"
             attribute_error_msg = "No LOGGING_CONFIG in no_dict."
-            mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+            mock_logger.debug.assert_called_once_with(
                 f"{logger_error_msg} {attribute_error_msg}."
             )
 
@@ -229,81 +228,81 @@ class TestSetAppModule:
     """
 
     def test_set_app_module_asgi(
-        self, mock_logger: logging.Logger, monkeypatch: MonkeyPatch
+        self, mock_logger: MockerFixture, monkeypatch: MonkeyPatch
     ) -> None:
         """Test `start.set_app_module` using module path to base ASGI app."""
         monkeypatch.setenv("APP_MODULE", "inboard.app.base.main:app")
         start.set_app_module(logger=mock_logger)
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             "App module set to inboard.app.base.main:app."
         )
 
     def test_set_app_module_fastapi(
-        self, mock_logger: logging.Logger, monkeypatch: MonkeyPatch
+        self, mock_logger: MockerFixture, monkeypatch: MonkeyPatch
     ) -> None:
         """Test `start.set_app_module` using module path to FastAPI app."""
         monkeypatch.setenv("APP_MODULE", "inboard.app.fastapibase.main:app")
         start.set_app_module(logger=mock_logger)
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             "App module set to inboard.app.fastapibase.main:app."
         )
 
     def test_set_app_module_starlette(
-        self, mock_logger: logging.Logger, monkeypatch: MonkeyPatch
+        self, mock_logger: MockerFixture, monkeypatch: MonkeyPatch
     ) -> None:
         """Test `start.set_app_module` using module path to Starlette app."""
         monkeypatch.setenv("APP_MODULE", "inboard.app.starlettebase.main:app")
         start.set_app_module(logger=mock_logger)
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             "App module set to inboard.app.starlettebase.main:app."
         )
 
     def test_set_app_module_custom_asgi(
         self,
         app_module_tmp_path: Path,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
         """Test `start.set_app_module` with custom module path to base ASGI app."""
         monkeypatch.syspath_prepend(app_module_tmp_path)
         monkeypatch.setenv("APP_MODULE", "tmp_app.base.main:app")
         start.set_app_module(logger=mock_logger)
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             "App module set to tmp_app.base.main:app."
         )
 
     def test_set_app_module_custom_fastapi(
         self,
         app_module_tmp_path: Path,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
         """Test `start.set_app_module` with custom module path to FastAPI app."""
         monkeypatch.syspath_prepend(app_module_tmp_path)
         monkeypatch.setenv("APP_MODULE", "tmp_app.fastapibase.main:app")
         start.set_app_module(logger=mock_logger)
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             "App module set to tmp_app.fastapibase.main:app."
         )
 
     def test_set_app_module_custom_starlette(
         self,
         app_module_tmp_path: Path,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
         """Test `start.set_app_module` with custom module path to Starlette app."""
         monkeypatch.syspath_prepend(app_module_tmp_path)
         monkeypatch.setenv("APP_MODULE", "tmp_app.starlettebase.main:app")
         start.set_app_module(logger=mock_logger)
-        mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_called_once_with(
             "App module set to tmp_app.starlettebase.main:app."
         )
 
     def test_set_app_module_incorrect(
         self,
         mocker: MockerFixture,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
         """Test `start.set_app_module` with incorrect module path."""
@@ -313,7 +312,7 @@ class TestSetAppModule:
             logger_error_msg = "Error when setting app module:"
             incorrect_module_msg = f"No module named {incorrect_module}"
             start.set_app_module(logger=mock_logger)
-            mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+            mock_logger.debug.assert_called_once_with(
                 f"{logger_error_msg} {incorrect_module_msg}."
             )
 
@@ -325,29 +324,26 @@ class TestRunPreStartScript:
 
     def test_run_pre_start_script_py(
         self,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         mocker: MockerFixture,
         monkeypatch: MonkeyPatch,
         pre_start_script_tmp_py: Path,
     ) -> None:
         """Test `start.run_pre_start_script` using temporary Python pre-start script."""
         monkeypatch.setenv("PRE_START_PATH", str(pre_start_script_tmp_py))
+        prestart_msg = "pre-start script with python"
         start.run_pre_start_script(logger=mock_logger)
-        mock_logger.debug.assert_has_calls(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_has_calls(
             calls=[
                 mocker.call("Checking for pre-start script."),
-                mocker.call(
-                    f"Running pre-start script with python {os.getenv('PRE_START_PATH')}."  # noqa: E501
-                ),
-                mocker.call(
-                    f"Ran pre-start script with python {os.getenv('PRE_START_PATH')}."
-                ),
+                mocker.call(f"Running {prestart_msg} {os.getenv('PRE_START_PATH')}."),
+                mocker.call(f"Ran {prestart_msg} {os.getenv('PRE_START_PATH')}."),
             ]
         )
 
     def test_run_pre_start_script_sh(
         self,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         mocker: MockerFixture,
         monkeypatch: MonkeyPatch,
         pre_start_script_tmp_sh: Path,
@@ -355,7 +351,7 @@ class TestRunPreStartScript:
         """Test `start.run_pre_start_script` using temporary pre-start shell script."""
         monkeypatch.setenv("PRE_START_PATH", str(pre_start_script_tmp_sh))
         start.run_pre_start_script(logger=mock_logger)
-        mock_logger.debug.assert_has_calls(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_has_calls(
             calls=[
                 mocker.call("Checking for pre-start script."),
                 mocker.call(
@@ -369,14 +365,14 @@ class TestRunPreStartScript:
 
     def test_run_pre_start_script_no_file(
         self,
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         mocker: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
         """Test `start.run_pre_start_script` with an incorrect file path."""
         monkeypatch.setenv("PRE_START_PATH", "/no/file/here")
         start.run_pre_start_script(logger=mock_logger)
-        mock_logger.debug.assert_has_calls(  # type: ignore[attr-defined]
+        mock_logger.debug.assert_has_calls(
             calls=[
                 mocker.call("Checking for pre-start script."),
                 mocker.call("No pre-start script found."),
@@ -401,7 +397,7 @@ class TestStartServer:
         self,
         app_module: str,
         logging_conf_dict: Dict[str, Any],
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         mocker: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
@@ -438,7 +434,7 @@ class TestStartServer:
         app_module: str,
         gunicorn_conf_path: Path,
         logging_conf_dict: Dict[str, Any],
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         mocker: MockerFixture,
         monkeypatch: MonkeyPatch,
         tmp_path: Path,
@@ -484,7 +480,7 @@ class TestStartServer:
         app_module: str,
         gunicorn_conf_tmp_file_path: Path,
         logging_conf_dict: Dict[str, Any],
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         mocker: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
@@ -523,7 +519,7 @@ class TestStartServer:
     def test_start_server_uvicorn_incorrect_module(
         self,
         logging_conf_dict: Dict[str, Any],
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         mocker: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
@@ -539,7 +535,7 @@ class TestStartServer:
             )
             logger_error_msg = "Error when starting server with start script:"
             module_error_msg = "No module named incorrect.base.main:app"
-            mock_logger.debug.assert_has_calls(  # type: ignore[attr-defined]
+            mock_logger.debug.assert_has_calls(
                 calls=[
                     mocker.call("Running Uvicorn without Gunicorn."),
                     mocker.call(f"{logger_error_msg} {module_error_msg}"),
@@ -559,7 +555,7 @@ class TestStartServer:
         app_module: str,
         gunicorn_conf_path: Path,
         logging_conf_dict: Dict[str, Any],
-        mock_logger: logging.Logger,
+        mock_logger: MockerFixture,
         mocker: MockerFixture,
         monkeypatch: MonkeyPatch,
     ) -> None:
@@ -577,6 +573,6 @@ class TestStartServer:
             process_error_msg = (
                 "Process manager needs to be either uvicorn or gunicorn."
             )
-            mock_logger.debug.assert_called_once_with(  # type: ignore[attr-defined]
+            mock_logger.debug.assert_called_once_with(
                 f"{logger_error_msg} {process_error_msg}"
             )
