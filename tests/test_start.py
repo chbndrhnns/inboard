@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+from _pytest.capture import CaptureFixture
+from _pytest.logging import LogCaptureFixture
 from _pytest.monkeypatch import MonkeyPatch
 from pytest_mock import MockerFixture
 
@@ -400,6 +402,8 @@ class TestStartServer:
     def test_start_server_uvicorn(
         self,
         app_module: str,
+        capfd: CaptureFixture,
+        caplog: LogCaptureFixture,
         logging_conf_dict: Dict[str, Any],
         mock_logger: logging.Logger,
         mocker: MockerFixture,
@@ -408,6 +412,7 @@ class TestStartServer:
         """Test `start.start_server` with Uvicorn."""
         monkeypatch.setenv("PROCESS_MANAGER", "uvicorn")
         assert os.getenv("PROCESS_MANAGER") == "uvicorn"
+        # TODO: how do I capture `capfd` output from mocked modules?
         mock_run = mocker.patch("uvicorn.run", autospec=True)
         start.start_server(
             str(os.getenv("PROCESS_MANAGER")),
@@ -424,6 +429,21 @@ class TestStartServer:
             log_level="info",
             reload=False,
         )
+        assert any("uvicorn" in name for (name, level, message) in caplog.record_tuples)
+        # url = f'http://{os.getenv("HOST", "0.0.0.0")}:{os.getenv("PORT", "80")}'
+        # mock_logger.info.assert_has_calls(
+        #     calls=[
+        #         mocker.call(f"Uvicorn running on {url}"),
+        #         mocker.call("Application startup complete."),
+        #     ]
+        # )
+        # captured = capfd.readouterr()
+        # assert len(captured) == 2
+        # assert len(captured[1])
+        # assert "Application startup complete." in captured.out
+        # assert "Logging dict config loaded from inboard.logging_conf." in captured.out
+        # assert "Running Uvicorn without Gunicorn." in captured.out
+        # assert f"Uvicorn running on {url}" in captured.out
 
     @pytest.mark.parametrize(
         "app_module",
@@ -436,6 +456,7 @@ class TestStartServer:
     def test_start_server_uvicorn_gunicorn(
         self,
         app_module: str,
+        capfd: CaptureFixture,
         gunicorn_conf_path: Path,
         logging_conf_dict: Dict[str, Any],
         mock_logger: logging.Logger,
@@ -443,16 +464,22 @@ class TestStartServer:
         monkeypatch: MonkeyPatch,
         tmp_path: Path,
     ) -> None:
-        """Test `start.start_server` with Uvicorn managed by Gunicorn."""
+        """Test default `start.start_server` with Uvicorn managed by Gunicorn."""
         monkeypatch.setenv(
             "GUNICORN_CMD_ARGS",
             f"--worker-tmp-dir {tmp_path}",
         )
+        monkeypatch.setenv("LOG_LEVEL", "debug")
+        monkeypatch.setenv("LOG_FORMAT", "verbose")
         monkeypatch.setenv("PROCESS_MANAGER", "gunicorn")
         assert gunicorn_conf_path.parent.exists()
         assert os.getenv("GUNICORN_CONF") == str(gunicorn_conf_path)
+        assert os.getenv("LOG_FORMAT") == "verbose"
+        assert os.getenv("LOG_LEVEL") == "debug"
         assert os.getenv("PROCESS_MANAGER") == "gunicorn"
         mock_run = mocker.patch("subprocess.run", autospec=True)
+        # TODO: how do I capture `capfd` output from mocked modules?
+        mocker.patch("subprocess.run", autospec=True)
         start.start_server(
             str(os.getenv("PROCESS_MANAGER")),
             app_module=app_module,
@@ -470,6 +497,30 @@ class TestStartServer:
                 app_module,
             ]
         )
+        mock_logger.debug.assert_called_once_with("Running Uvicorn with Gunicorn.")  # type: ignore[attr-defined]  # noqa: E501
+        captured = capfd.readouterr()
+        worker_class = os.getenv("WORKER_CLASS", "uvicorn.workers.UvicornWorker")
+        web_concurrency = multiprocessing.cpu_count()
+        assert "Logging dict config loaded from inboard.logging_conf." in captured.out
+        assert "Checking for pre-start script."
+        assert "Running pre-start script with python /app/inboard/app/prestart.py."
+        assert "Ran pre-start script with python /app/inboard/app/prestart.py."
+        assert "App module set to inboard.app.fastapibase.main:app."
+        assert "Running Uvicorn with Gunicorn."
+        assert "Current configuration:" in captured.out
+        assert f"config: {os.getenv('GUNICORN_CONF')}" in captured.out
+        assert f"workers: {web_concurrency}" in captured.out
+        assert f"worker_class: {worker_class}" in captured.out
+        assert " timeout: 120" in captured.out
+        assert "graceful_timeout: 120" in captured.out
+        assert "keepalive: 5" in captured.out
+        assert "worker_tmp_dir: /dev/shm" in captured.out
+        assert f"loglevel: {os.getenv('LOG_LEVEL')}"
+        assert "logconfig_dict: {" in captured.out
+        assert f"default_proc_name: {app_module}" in captured.out
+        assert "Listening at: http://0.0.0.0:80" in captured.out
+        assert f"Using worker: {worker_class}" in captured.out
+        assert f"{web_concurrency} workers" in captured.out
 
     @pytest.mark.parametrize(
         "app_module",
@@ -483,6 +534,7 @@ class TestStartServer:
         self,
         app_module: str,
         gunicorn_conf_tmp_file_path: Path,
+        capfd: CaptureFixture,
         logging_conf_dict: Dict[str, Any],
         mock_logger: logging.Logger,
         mocker: MockerFixture,
